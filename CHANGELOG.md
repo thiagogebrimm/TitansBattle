@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.1.1](https://github.com/RoinujNosde/TitansBattle/compare/v6.1.0...v6.1.1) (2022-07-02)
+
+
+### Bug Fixes
+
+* allowing duplicate elements in casualties ([#80](https://github.com/RoinujNosde/TitansBattle/issues/80)) ([3f9031c](https://github.com/RoinujNosde/TitansBattle/commit/3f9031c76e9d59d3cf93e60d45f0262660f3cdf0))
+
 ## [6.1.0](https://github.com/RoinujNosde/TitansBattle/compare/v6.0.0...v6.1.0) (2022-06-30)
 
 
