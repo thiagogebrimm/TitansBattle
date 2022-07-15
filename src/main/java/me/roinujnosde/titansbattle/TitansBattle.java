@@ -25,13 +25,13 @@ import me.roinujnosde.titansbattle.challenges.Challenge;
 import me.roinujnosde.titansbattle.challenges.ChallengeRequest;
 import me.roinujnosde.titansbattle.dao.ConfigurationDao;
 import me.roinujnosde.titansbattle.games.Game;
-import me.roinujnosde.titansbattle.hooks.discord.DiscordWebhook;
 import me.roinujnosde.titansbattle.hooks.papi.PlaceholderHook;
 import me.roinujnosde.titansbattle.managers.*;
 import me.roinujnosde.titansbattle.types.GameConfiguration;
 import me.roinujnosde.titansbattle.types.Kit;
 import me.roinujnosde.titansbattle.types.Prizes;
 import me.roinujnosde.titansbattle.types.Warrior;
+import me.roinujnosde.titansbattle.utils.DiscordWebhook;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -43,13 +43,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Level;
 
 /**
  * @author RoinujNosde
+ *
  */
 public final class TitansBattle extends JavaPlugin {
 
@@ -254,18 +255,19 @@ public final class TitansBattle extends JavaPlugin {
     }
 
     public void sendDiscordMessage(String message) {
-        Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
-            String url = getConfig().getString("discord_webhook_url");
-            if (url != null && !url.isEmpty()) {
-                DiscordWebhook webhook = new DiscordWebhook(url);
-                webhook.setContent(message.replace("§", "&"));
-                try {
-                    webhook.execute();
-                } catch (IOException e) {
-                    getLogger().log(Level.SEVERE, "Error sending webhook message", e);
-                }
+        if (getConfig().getBoolean("webhook")) {
+            String url = getConfig().getString("webhook_url");
+            DiscordWebhook webhook = new DiscordWebhook(url);
+            webhook.setContent(message);
+            try {
+                webhook.execute();
+            } catch (MalformedURLException e) {
+                System.out.println("[TitansBattle] Invalid webhook URL");
+
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-        });
+        }
     }
 
 }
