@@ -49,13 +49,13 @@ public class EliminationTournamentGame extends Game {
         if (!getConfig().isGroupMode()) {
             return playerDuelists.size() != 0 && playerDuelists.get(0).isDuelist(warrior);
         }
-        return groupDuelists.size() != 0 && groupDuelists.get(0).isDuelist(getGroup(warrior));
+        return groupDuelists.size() != 0 && groupDuelists.get(0).isDuelist(warrior.getGroup());
     }
 
     private List<Warrior> getDuelLosers(@NotNull Warrior defeated) {
-        Group group = getGroup(defeated);
+        Group group = defeated.getGroup();
         if (group != null && getConfig().isGroupMode()) {
-            return casualties.stream().filter(p -> isMember(group, p)).collect(Collectors.toList());
+            return casualties.stream().filter(p -> group.isMember(p.getUniqueId())).collect(Collectors.toList());
         }
         return Collections.singletonList(defeated);
     }
@@ -63,8 +63,8 @@ public class EliminationTournamentGame extends Game {
     private List<Warrior> getDuelWinners(@NotNull Warrior defeated) {
         List<Warrior> list = new ArrayList<>();
         if (getConfig().isGroupMode()) {
-            Group winnerGroup = Objects.requireNonNull(groupDuelists.get(0).getOther(getGroup(defeated)));
-            list = getParticipants().stream().filter(p -> isMember(winnerGroup, p))
+            Group winnerGroup = Objects.requireNonNull(groupDuelists.get(0).getOther(defeated.getGroup()));
+            list = getParticipants().stream().filter(p -> winnerGroup.isMember(p.getUniqueId()))
                     .collect(Collectors.toList());
         } else {
             Warrior other = playerDuelists.get(0).getOther(defeated);
@@ -81,7 +81,7 @@ public class EliminationTournamentGame extends Game {
     private void removeDuelist(@NotNull Warrior warrior) {
         if (getConfig().isGroupMode()) {
             if (lost(warrior)) {
-                groupDuelists.removeIf(duel -> duel.isDuelist(getGroup(warrior)));
+                groupDuelists.removeIf(duel -> duel.isDuelist(warrior.getGroup()));
             }
             return;
         }
@@ -153,7 +153,7 @@ public class EliminationTournamentGame extends Game {
         if (player == null) return;
 
         waitingThirdPlace.add(warrior);
-        Bukkit.getScheduler().runTaskLater(plugin, () -> player.spigot().respawn(), 1L);
+        Bukkit.getScheduler().runTask(plugin, () -> player.spigot().respawn());
     }
 
     private void processNotCurrentDuelistLeaving(@NotNull Warrior warrior, List<Warrior> duelLosers) {
@@ -178,7 +178,7 @@ public class EliminationTournamentGame extends Game {
 
     private boolean lost(@NotNull Warrior warrior) {
         if (getConfig().isGroupMode()) {
-            return !getGroupParticipants().containsKey(getGroup(warrior));
+            return !getGroupParticipants().containsKey(warrior.getGroup());
         }
         return true;
     }
@@ -257,7 +257,7 @@ public class EliminationTournamentGame extends Game {
             break;
         }
         for (Group group : toKick) {
-            kickExcessive(participants.stream().filter(p -> isMember(group, p)).collect(Collectors.toSet()));
+            kickExcessive(participants.stream().filter(group::isMember).collect(Collectors.toSet()));
         }
     }
 
@@ -286,7 +286,7 @@ public class EliminationTournamentGame extends Game {
 
     @NotNull
     private List<Group> getWaitingThirdPlaceGroups() {
-        return waitingThirdPlace.stream().map(this::getGroup).distinct().collect(Collectors.toList());
+        return waitingThirdPlace.stream().map(Warrior::getGroup).distinct().collect(Collectors.toList());
     }
 
     private void generateDuelists() {
@@ -370,7 +370,7 @@ public class EliminationTournamentGame extends Game {
             List<Group> duelists = groupDuelists.get(0).getDuelists();
             List<Warrior> warriors = getParticipants().stream().filter(player -> {
                 for (Group g : duelists) {
-                    if (isMember(g, player)) {
+                    if (g.isMember(player.getUniqueId())) {
                         return true;
                     }
                 }
@@ -383,7 +383,7 @@ public class EliminationTournamentGame extends Game {
     private @Nullable Group getAnyGroup(@Nullable List<Warrior> warriors) {
         if (warriors != null && getConfig().isGroupMode()) {
             for (Warrior warrior : warriors) {
-                Group group = getGroup(warrior);
+                Group group = warrior.getGroup();
                 if (group != null) {
                     return group;
                 }
@@ -416,7 +416,7 @@ public class EliminationTournamentGame extends Game {
             firstPlaceWinners.forEach(Kit::clearInventory);
         }
         if (getConfig().isGroupMode() && firstGroup != null) {
-            casualties.stream().filter(p -> isMember(firstGroup, p)).forEach(firstPlaceWinners::add);
+            casualties.stream().filter(firstGroup::isMember).forEach(firstPlaceWinners::add);
             firstPlaceWinners = firstPlaceWinners.stream().distinct().collect(Collectors.toList());
             todayWinners.setWinnerGroup(getConfig().getName(), firstGroup.getName());
             GroupWinEvent event = new GroupWinEvent(firstGroup);
@@ -435,7 +435,6 @@ public class EliminationTournamentGame extends Game {
             givePrizes(KILLER, null, Collections.singletonList(killer));
             gameManager.setKiller(getConfig(), killer, null);
             SoundUtils.playSound(SoundUtils.Type.VICTORY, plugin.getConfig(), killer.toOnlinePlayer());
-            discordAnnounce("discord_who_won_killer", killer.getName(), killsCount.get(killer));
             todayWinners.setKiller(getConfig().getName(), killer.getUniqueId());
         }
         broadcastKey("who_won_tournament", getWinnerName(firstPlaceWinners),
@@ -488,9 +487,4 @@ public class EliminationTournamentGame extends Game {
     private <D> String[] duelistsToNameArray(int index, List<Duel<D>> list, Function<D, String> getName) {
         return list.get(index).getDuelists().stream().map(getName).toArray(String[]::new);
     }
-
-    private boolean isMember(Group group, Warrior warrior) {
-        return group.equals(getGroup(warrior));
-    }
-
 }
