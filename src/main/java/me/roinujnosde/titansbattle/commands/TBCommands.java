@@ -8,6 +8,7 @@ import me.roinujnosde.titansbattle.BaseGameConfiguration;
 import me.roinujnosde.titansbattle.TitansBattle;
 import me.roinujnosde.titansbattle.challenges.ArenaConfiguration;
 import me.roinujnosde.titansbattle.dao.ConfigurationDao;
+import me.roinujnosde.titansbattle.events.PlayerJoinGameEvent;
 import me.roinujnosde.titansbattle.exceptions.CommandNotSupportedException;
 import me.roinujnosde.titansbattle.games.Game;
 import me.roinujnosde.titansbattle.managers.ConfigManager;
@@ -20,6 +21,7 @@ import me.roinujnosde.titansbattle.types.Warrior;
 import me.roinujnosde.titansbattle.types.Winners;
 import me.roinujnosde.titansbattle.utils.Helper;
 import me.roinujnosde.titansbattle.utils.SoundUtils;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -88,6 +90,20 @@ public class TBCommands extends BaseCommand {
         }
         game.onKick(warrior);
         sender.sendMessage(MessageFormat.format(plugin.getLang("has_been_kicked"), wName));
+    }
+
+    public static boolean isInsertCalled = false;
+    @Subcommand("%insert|insert")
+    @CommandPermission("titansbattle.insert")
+    @Description("{@@command.description.insert}")
+    public void insert(CommandSender sender, OnlinePlayer targetPlayer) {
+        isInsertCalled = true;
+        try {
+            plugin.debug(String.format("%s was inserted by %s", targetPlayer.getPlayer().getName(), sender.getName()));
+            gameManager.getCurrentGame().ifPresent(g -> g.onJoin(databaseManager.getWarrior(targetPlayer.getPlayer())));
+        } finally {
+            isInsertCalled = false;
+        }
     }
 
     @Subcommand("%cancel|cancel")

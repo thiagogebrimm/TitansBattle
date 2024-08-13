@@ -3,6 +3,7 @@ package me.roinujnosde.titansbattle.listeners;
 import me.roinujnosde.titansbattle.BaseGame;
 import me.roinujnosde.titansbattle.BaseGameConfiguration;
 import me.roinujnosde.titansbattle.TitansBattle;
+import me.roinujnosde.titansbattle.commands.TBCommands;
 import me.roinujnosde.titansbattle.events.PlayerJoinGameEvent;
 import me.roinujnosde.titansbattle.types.Group;
 import me.roinujnosde.titansbattle.types.Kit;
@@ -26,6 +27,13 @@ public class JoinGameListener extends TBListener {
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)
     public void gameHappening(PlayerJoinGameEvent event) {
         BaseGame game = event.getGame();
+
+        // Permitir que o jogador insira manualmente, mesmo se o jogo já começou
+        if (TBCommands.isInsertCalled) {
+            return; // Se o insert foi chamado, simplesmente retorne e não faça nada
+        }
+
+        // Bloqueia a entrada se o jogo já começou e o jogador não foi inserido manualmente
         if (!game.isLobby()) {
             cancelWithMessage(event, "game_is_happening");
         }
