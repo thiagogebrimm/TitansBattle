@@ -21,6 +21,7 @@ public class GameManager {
 
     private final TitansBattle plugin = TitansBattle.getInstance();
     private @Nullable Game currentGame;
+    private boolean isEventActive = false;
 
     /**
      * Gets the current game
@@ -31,12 +32,41 @@ public class GameManager {
         return Optional.ofNullable(currentGame);
     }
 
+    public boolean isEventActive() {
+        return isEventActive;
+    }
+
+    public void setEventActive(boolean active) {
+        this.isEventActive = active;
+    }
+
     public void setCurrentGame(@Nullable Game game) {
         this.currentGame = game;
+
         if (game != null) {
-            plugin.getListenerManager().registerBattleListeners();
+            if (!plugin.getListenerManager().isBattleListenersRegistered()) {
+                plugin.getListenerManager().registerBattleListeners();
+            }
+
+            // Atualizar estado do evento via Redis
+            syncCurrentGameState();
         } else {
             plugin.getListenerManager().unregisterBattleListeners();
+
+            // Atualizar estado do evento via Redis
+            syncCurrentGameState();
+        }
+    }
+
+    public void syncCurrentGameState() {
+        if (plugin.isRedisEnabled()) {
+            if (currentGame != null) {
+                plugin.getRedisManager().getCommands().publish("titansbattle-broadcasts", "EVENT_ACTIVE");
+                plugin.getLogger().info("Mensagem EVENT_ACTIVE enviada ao Redis.");
+            } else {
+                plugin.getRedisManager().getCommands().publish("titansbattle-broadcasts", "EVENT_INACTIVE");
+                plugin.getLogger().info("Mensagem EVENT_INACTIVE enviada ao Redis.");
+            }
         }
     }
 

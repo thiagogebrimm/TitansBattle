@@ -42,6 +42,7 @@ public class PlayerCommandPreprocessListener extends TBListener {
 
     public PlayerCommandPreprocessListener(@NotNull TitansBattle plugin) {
         super(plugin);
+        plugin.getLogger().info("PlayerCommandPreprocessListener inicializado.");
     }
 
     @EventHandler
@@ -49,17 +50,18 @@ public class PlayerCommandPreprocessListener extends TBListener {
         GameManager gm = plugin.getGameManager();
         ConfigManager cm = plugin.getConfigManager();
 
-        BaseGame game = gm.getCurrentGame().orElse(null);
-        if (game == null) {
+        // Verifica se o evento está ativo
+        if (!gm.isEventActive()) {
             return;
         }
+
         Player player = event.getPlayer();
         if (canBypassCommandRestrictions(player)) {
             return;
         }
         for (String command : cm.getBlockedCommandsEveryone()) {
             if (event.getMessage().startsWith(command)) {
-                player.sendMessage(MessageFormat.format(plugin.getLang("command-blocked-for-everyone", game),
+                player.sendMessage(MessageFormat.format(plugin.getLang("command-blocked-for-everyone", null),
                         event.getMessage()));
                 event.setCancelled(true);
                 break;
@@ -90,5 +92,4 @@ public class PlayerCommandPreprocessListener extends TBListener {
     private boolean canBypassCommandRestrictions(Player player) {
         return player.hasPermission("titansbattle.command-bypass");
     }
-
 }

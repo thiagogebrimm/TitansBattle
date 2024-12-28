@@ -27,6 +27,8 @@ import me.roinujnosde.titansbattle.dao.ConfigurationDao;
 import me.roinujnosde.titansbattle.games.Game;
 import me.roinujnosde.titansbattle.hooks.discord.DiscordWebhook;
 import me.roinujnosde.titansbattle.hooks.papi.PlaceholderHook;
+import me.roinujnosde.titansbattle.listeners.PlayerCommandPreprocessListener;
+import me.roinujnosde.titansbattle.listeners.RedisMessageListener;
 import me.roinujnosde.titansbattle.managers.*;
 import me.roinujnosde.titansbattle.types.GameConfiguration;
 import me.roinujnosde.titansbattle.types.Kit;
@@ -38,6 +40,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.entity.Player;
+import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -67,6 +70,7 @@ public final class TitansBattle extends JavaPlugin {
     private ConfigurationDao configurationDao;
     private PlaceholderHook placeholderHook;
     private RedisManager redisManager;
+    private PlayerCommandPreprocessListener commandListener;
 
     @Override
     public void onEnable() {
@@ -97,7 +101,8 @@ public final class TitansBattle extends JavaPlugin {
 
         setupRedis();
         if (isRedisEnabled()) {
-            redisManager.registerPubSubListener();
+            RedisMessageListener redisListener = new RedisMessageListener(this);
+            redisManager.registerPubSubListener(redisListener);
         }
 
     }
@@ -166,6 +171,34 @@ public final class TitansBattle extends JavaPlugin {
     public @Nullable GroupManager getGroupManager() {
         return groupManager;
     }
+
+    public void registerPlayerCommandPreprocessListener() {
+        if (commandListener == null) {
+            commandListener = new PlayerCommandPreprocessListener(this);
+            Bukkit.getPluginManager().registerEvents(commandListener, this);
+            getLogger().info("PlayerCommandPreprocessListener registrado localmente.");
+        }
+    }
+    public void unregisterPlayerCommandPreprocessListener() {
+        if (commandListener != null) {
+            PlayerCommandPreprocessEvent.getHandlerList().unregister(commandListener);
+            commandListener = null;
+            getLogger().info("PlayerCommandPreprocessListener desregistrado localmente.");
+        }
+    }
+    public void notifyStartListener() {
+        if (isRedisEnabled()) {
+            redisManager.getCommands().publish("titansbattle-broadcasts", "START_LISTENER");
+            getLogger().info("Mensagem START_LISTENER enviada ao Redis.");
+        }
+    }
+    public void notifyStopListener() {
+        if (isRedisEnabled()) {
+            redisManager.getCommands().publish("titansbattle-broadcasts", "STOP_LISTENER");
+            getLogger().info("Mensagem STOP_LISTENER enviada ao Redis.");
+        }
+    }
+
 
     /**
      * Sets the GroupManager

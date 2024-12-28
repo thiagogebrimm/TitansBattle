@@ -23,6 +23,12 @@ public class ListenerManager {
     }
 
     public void registerBattleListeners() {
+        if (isBattleListenersRegistered()) {
+            plugin.getLogger().info("Battle listeners já estão registrados. Ignorando...");
+            return;
+        }
+
+        plugin.getLogger().info("Registering battle listeners...");
         registerListener(new PlayerRespawnListener(plugin));
         registerListener(new PlayerCommandPreprocessListener(plugin));
         registerListener(new PlayerDeathListener(plugin));
@@ -30,7 +36,12 @@ public class ListenerManager {
         registerListener(new PlayerTeleportListener(plugin));
         registerListener(new BlockUpdateListener(plugin));
         registerListener(new JoinGameListener(plugin));
-        plugin.getLogger().info("Registering battle listeners...");
+        plugin.getLogger().info("Battle listeners registrados com sucesso.");
+    }
+
+    public boolean isBattleListenersRegistered() {
+        return HandlerList.getRegisteredListeners(plugin).stream()
+                .anyMatch(listener -> listener.getListener() instanceof PlayerCommandPreprocessListener);
     }
 
     public void unregisterBattleListeners() {

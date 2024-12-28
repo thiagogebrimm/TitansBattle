@@ -17,9 +17,9 @@ public class RedisManager {
         this.connection = redisClient.connect();
     }
 
-    public void registerPubSubListener() {
+    public void registerPubSubListener(RedisMessageListener listener) {
         this.pubSubConnection = redisClient.connectPubSub();
-        pubSubConnection.addListener(new RedisMessageListener());
+        pubSubConnection.addListener(listener);
         pubSubConnection.sync().subscribe("titansbattle-broadcasts");
     }
 
@@ -35,4 +35,3 @@ public class RedisManager {
         redisClient.shutdown();
     }
 }
-
